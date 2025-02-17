@@ -129,7 +129,7 @@ const getEventById = async (req, res) => {
       return res.status(400).json({ success: false, message: "Event ID is required." });
     }
 
-    const event = await Event.findById(eventId);
+    const event = await Event.findOne({eventId:eventId});
 
     if (!event) {
       return res.status(404).json({ success: false, message: "Event not found." });
@@ -152,22 +152,27 @@ const updateEvent = async (req, res) => {
     const { eventId } = req.params;
     const { description, location } = req.body;
 
-    if (!eventId) {
-      return res.status(400).json({ success: false, message: "Event ID is required." });
+    console.log("Received Event ID:", eventId); // Debug log
+
+    if (!eventId || !mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ success: false, message: "Invalid Event ID." });
     }
-
-    // ✅ Update the event in the database
-    const updatedEvent = await Event.findByIdAndUpdate(
-      eventId,
-      { $set: { aboutEvent: description, location } }, // ✅ Updating new fields
-      { new: true }
-    );
-
-    if (!updatedEvent) {
+   
+    // Check if the event exists
+    const event = await Event.findOne({eventId:eventId})
+    if (!event) {
+      console.log("Event not found in DB");
       return res.status(404).json({ success: false, message: "Event not found." });
     }
 
-    res.status(200).json({ success: true, message: "Event updated successfully.", data: updatedEvent });
+    // Update event fields
+    event.aboutEvent = description || event.aboutEvent;
+    event.location = location || event.location;
+
+    await event.save();
+
+    console.log("Updated Event:", event);
+    res.status(200).json({ success: true, message: "Event updated successfully.", data: event });
   } catch (error) {
     console.error("Error updating event:", error);
     res.status(500).json({ success: false, message: "Failed to update event." });

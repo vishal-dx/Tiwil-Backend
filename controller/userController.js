@@ -97,12 +97,21 @@ const uploadImage = async (req, res) => {
       res.status(500).json({ success: false, message: "Failed to delete account" });
     }
   }
-  
-
+  const getAllUsers = async(req,res) => {
+    try{
+      const data = await User.find()
+      if(data) return res.status(200).json({data:data})
+    }catch(error){
+      console.error("Error deleting account:", error);
+      res.status(500).json({ success: false, message: "Failed to delete account" });
+    }
+  }
+ 
 module.exports = {
   getUserData,
   uploadImage,
   updateProfile,
   closeAccount,
-  uploadImage
+  uploadImage,
+  getAllUsers
 };

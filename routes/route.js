@@ -1,12 +1,16 @@
 const express = require("express");
 // const { sendOTP, verifyOTP, loginUser } = require("../controllers/authController");
-const { getUserData, updateProfile, uploadImage, closeAccount } = require("../controller/userController");
+const { getUserData, updateProfile, uploadImage, closeAccount, getAllUsers } = require("../controller/userController");
 const { getProfile, getUserProfile, saveUserProfile } = require("../controller/profileController");
 const { verifyToken } = require("../middleware/validate");
 const { upload, profileUpload } = require("../middleware/multer");
 const { getFamilyInfo, saveFamilyInfo, familyUpload, updateFamilyMember,   } = require("../controller/familyInfoController");
-const { getEvents, getEventById, eventUpload, createEvent, updateEvent, deleteEvent, getPastEvents } = require("../controller/eventsController");
+const { getEvents, getEventById, createEvent, updateEvent, deleteEvent, getPastEvents } = require("../controller/eventsController");
 const { sendLoginOTP, sendSignupOTP, verifySignupOTP, loginWithPhone } = require("../controller/authController");
+const { createWishlistItem, getWishlistByEvent, getWishlistItemById, updateWishlistItem, deleteWishlistItem, wishlistUpload } = require("../controller/wishListController");
+const { inviteGuests, getEventGuests, updateGuestStatus}= require("../controller/guestController");
+const { getInvitations, updateInvitationStatus } = require("../controller/invitationController");
+
 const router = express.Router();
 
 
@@ -16,7 +20,7 @@ router.post("/login/send-otp", sendLoginOTP); // Send OTP for login
 router.post("/login/verify-otp", loginWithPhone); // **Login: Verify OTP**
 
 router.get("/user-data", verifyToken, getUserData);
-
+router.get("/users", verifyToken, getAllUsers)
 
 // Route to save or update profile data
 router.get("/profile", verifyToken, getProfile);
@@ -39,6 +43,21 @@ router.delete("/profile", verifyToken, closeAccount)
 
 router.get("/history", verifyToken, getPastEvents);
 
+//wishlist
+router.post("/wishlist", verifyToken, wishlistUpload.single("image"), createWishlistItem);
+router.get("/wishlist/event/:eventId", verifyToken, getWishlistByEvent);
+router.get("/wishlist/item/:itemId", verifyToken, getWishlistItemById);
+router.put("/wishlist/:itemId", verifyToken, wishlistUpload.single("image"), updateWishlistItem);
+router.delete("/wishlist/:itemId", verifyToken, deleteWishlistItem);
 
 
+//guests
+router.post("/guests/invite", verifyToken, inviteGuests); // Send invitations
+router.get("/guests/:eventId", verifyToken, getEventGuests); // Fetch event guests
+router.put("/guests/respond/:guestId", verifyToken, updateGuestStatus); 
+// ✅ Route to fetch user invitations
+router.get("/invitations", verifyToken, getInvitations);
+
+// ✅ Route to update invitation status (Accept/Decline)
+router.put("/invitations/:invitationId", verifyToken, updateInvitationStatus);
 module.exports = router;
