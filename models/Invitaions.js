@@ -4,26 +4,24 @@ const InvitationSchema = new mongoose.Schema({
   eventId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: "Event", 
-    required: true 
+    required: true, 
+    index: true // ✅ Optimized for lookup
   },
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: "User", 
-    required: true 
+    required: true, 
+    index: true
   },
-  phoneNumber: { 
-    type: String, 
-    required: true 
-  }, 
-  status: { 
-    type: String, 
-    enum: ["Pending", "Accepted", "Declined"], 
-    default: "Pending" 
-  },
-  invitedAt: { 
-    type: Date, 
-    default: Date.now 
-  }
+  invitations: [
+    {
+      _id: { type: mongoose.Schema.Types.ObjectId, auto: true }, 
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, 
+      phoneNumber: { type: String, required: true },
+      status: { type: String, enum: ["Pending", "Accepted", "Declined"], default: "Pending" },
+      invitedAt: { type: Date, default: Date.now }
+    }
+  ]
 });
 
 module.exports = mongoose.model("Invitation", InvitationSchema);

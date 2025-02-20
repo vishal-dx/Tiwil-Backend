@@ -3,6 +3,7 @@ const Wishlist = require("../models/Wishlist");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const User = require("../models/User");
 
 // ✅ Ensure the wishlist uploads directory exists
 const wishlistUploadDirectory = path.join(__dirname, "../uploads/wishlist");
@@ -36,78 +37,140 @@ const wishlistFileFilter = (req, file, cb) => {
 // ✅ Multer config for Wishlist images
 const wishlistUpload = multer({
   storage: wishlistStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { 
+    fileSize: 5 * 1024 * 1024,  // ✅ 5MB file size limit
+    fieldSize: 25 * 1024 * 1024 // ✅ Increase field size limit to 25MB
+  },
   fileFilter: wishlistFileFilter,
 });
 
+
+// const createWishlistItem = async (req, res) => {
+//   try {
+//       console.log("📩 Request Body:", req.body);
+//       console.log("📷 Uploaded File:", req.file);  // Debugging log
+
+//       const { giftName, price, productLink, desireRate, description, eventId, image } = req.body;
+//       const userId = req.user?.userId;
+
+//       if (!eventId || !userId || !giftName || !price) {
+//           return res.status(400).json({ success: false, message: "Missing required fields." });
+//       }
+
+//       let imageUrl = "";
+
+//       // ✅ Check if an image is uploaded via Multer
+//       if (req.file) {
+//           imageUrl = `uploads/${req.file.filename}`;
+//           console.log("✅ Image Uploaded Successfully:", imageUrl);
+//       } 
+//       // ✅ Handle Base64 Image Upload
+//       else if (image && image.startsWith("data:image")) {
+//           const matches = image.match(/^data:image\/(\w+);base64,(.+)$/);
+//           if (!matches) {
+//               return res.status(400).json({ success: false, message: "Invalid Base64 image format." });
+//           }
+
+//           const ext = matches[1];  // Extract file extension (png, jpg, etc.)
+//           const base64Data = matches[2]; // Extract Base64 data
+//           const fileName = `wishlist-${Date.now()}.${ext}`; // Unique filename
+//           const filePath = path.join(__dirname, "../uploads/wishlist", fileName);
+
+//           // ✅ Save Base64 image as a file
+//           fs.writeFileSync(filePath, base64Data, { encoding: "base64" });
+//           imageUrl = `uploads/wishlist/${fileName}`;
+//           console.log("✅ Base64 Image Saved:", imageUrl);
+//       } 
+//       else {
+//           console.log("⚠️ No image provided!");
+//           return res.status(400).json({ success: false, message: "Image upload failed!" });
+//       }
+
+//       const newWishlistItem = new Wishlist({
+//           eventId,
+//           userId,
+//           giftName,
+//           price,
+//           productLink,
+//           desireRate,
+//           description,
+//           imageUrl,  // ✅ Save the processed image URL
+//       });
+
+//       await newWishlistItem.save();
+
+//       return res.status(201).json({
+//           success: true,
+//           message: "Wishlist item added successfully",
+//           data: newWishlistItem,
+//       });
+//   } catch (error) {
+//       console.error("❌ Error creating wishlist item:", error);
+//       return res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
 const createWishlistItem = async (req, res) => {
-    try {
-        console.log("📩 Request Body:", req.body);
-        console.log("📷 Uploaded File:", req.file);  // Debugging log
+  try {
+      console.log("📩 Request Body:", req.body);
+      console.log("📷 Uploaded File:", req.file);  // Debugging log
 
-        const { giftName, price, productLink, desireRate, description, eventId, image } = req.body;
-        const userId = req.user?.userId;
+      const { giftName, price, productLink, desireRate, description, eventId, image } = req.body;
+      const userId = req.user?.userId;
 
-        if (!eventId || !userId || !giftName || !price) {
-            return res.status(400).json({ success: false, message: "Missing required fields." });
-        }
+      if (!eventId || !userId || !giftName || !price) {
+          return res.status(400).json({ success: false, message: "Missing required fields." });
+      }
 
-        let imageUrl = "";
+      let imageUrl = ""; // ✅ Default empty image
 
-        // ✅ Check if image is uploaded via Multer
-        if (req.file) {
-            imageUrl = `uploads/${req.file.filename}`;
-            console.log("✅ Image Uploaded Successfully:", imageUrl);
-        } 
-        // ✅ If image is Base64, convert and save it
-        else if (image && image.startsWith("data:image")) {
-            const matches = image.match(/^data:image\/(\w+);base64,(.+)$/);
-            if (!matches) {
-                return res.status(400).json({ success: false, message: "Invalid Base64 image format." });
-            }
+      // ✅ Check if an image is uploaded via Multer
+      if (req.file) {
+          imageUrl = `uploads/${req.file.filename}`;
+          console.log("✅ Image Uploaded Successfully:", imageUrl);
+      } 
+      // ✅ Handle Base64 Image Upload
+      else if (image && image.startsWith("data:image")) {
+          const matches = image.match(/^data:image\/(\w+);base64,(.+)$/);
+          if (matches) {
+              const ext = matches[1];  // Extract file extension (png, jpg, etc.)
+              const base64Data = matches[2]; // Extract Base64 data
+              const fileName = `wishlist-${Date.now()}.${ext}`; // Unique filename
+              const filePath = path.join(__dirname, "../uploads/wishlist", fileName);
 
-            const ext = matches[1];  // Extract file extension (png, jpg, etc.)
-            const base64Data = matches[2]; // Extract Base64 data
-            const fileName = `${Date.now()}.${ext}`;
-            const filePath = path.join(__dirname, "../uploads", fileName);
+              // ✅ Save Base64 image as a file
+              fs.writeFileSync(filePath, base64Data, { encoding: "base64" });
+              imageUrl = `uploads/wishlist/${fileName}`;
+              console.log("✅ Base64 Image Saved:", imageUrl);
+          }
+      }
 
-            // ✅ Save Base64 image as a file
-            fs.writeFileSync(filePath, base64Data, { encoding: "base64" });
-            imageUrl = `uploads/${fileName}`;
-            console.log("✅ Base64 Image Saved:", imageUrl);
-        } 
-        else {
-            console.log("⚠️ No image provided!");
-            return res.status(400).json({ success: false, message: "Image upload failed!" });
-        }
+      // ✅ Now imageUrl is either a valid image path or an empty string
 
-        const newWishlistItem = new Wishlist({
-            eventId,
-            userId,
-            giftName,
-            price,
-            productLink,
-            desireRate,
-            description,
-            imageUrl, 
-        });
+      const newWishlistItem = new Wishlist({
+          eventId,
+          userId,
+          giftName,
+          price,
+          productLink,
+          desireRate,
+          description,
+          imageUrl,  // ✅ Save the processed image URL (empty if no image)
+      });
 
-        await newWishlistItem.save();
+      await newWishlistItem.save();
 
-        return res.status(201).json({
-            success: true,
-            message: "Wishlist item added successfully",
-            data: newWishlistItem,
-        });
-    } catch (error) {
-        console.error("❌ Error creating wishlist item:", error);
-        return res.status(500).json({ success: false, message: "Server error" });
-    }
+      return res.status(201).json({
+          success: true,
+          message: "Wishlist item added successfully",
+          data: newWishlistItem,
+      });
+  } catch (error) {
+      console.error("❌ Error creating wishlist item:", error);
+      return res.status(500).json({ success: false, message: "Server error" });
+  }
 };
-
-
-
-  
+ 
 
 const getWishlistByEvent = async (req, res) => {
     try {
@@ -186,7 +249,72 @@ const getWishlistByEvent = async (req, res) => {
       return res.status(500).json({ success: false, message: "Server error" });
     }
   };
-    
+
+// ✅ Update Wishlist Status
+// const updateWishlistStatus = async (req, res) => {
+//   try {
+//     const { itemId } = req.params;
+//     const { status } = req.body;
+
+//     if (!["Unmark", "Mark", "Purchased"].includes(status)) {
+//       return res.status(400).json({ success: false, message: "Invalid status." });
+//     }
+
+//     const updatedItem = await Wishlist.findByIdAndUpdate(
+//       itemId,
+//       { status },
+//       { new: true }
+//     );
+
+//     if (!updatedItem) {
+//       return res.status(404).json({ success: false, message: "Wishlist item not found." });
+//     }
+
+//     return res.status(200).json({ success: true, message: "Wishlist status updated.", data: updatedItem });
+//   } catch (error) {
+//     console.error("Error updating wishlist status:", error);
+//     return res.status(500).json({ success: false, message: "Server error." });
+//   }
+// };
+
+const updateWishlistStatus = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const { status } = req.body;
+    const userId = req.user?.userId;
+
+    const wishlistItem = await Wishlist.findById(itemId);
+    if (!wishlistItem) {
+      return res.status(404).json({ success: false, message: "Wishlist item not found." });
+    }
+
+    if (status === "Mark") {
+      // ✅ Store marking user details
+      const user = await User.findById(userId);
+      wishlistItem.status = "Mark";
+      wishlistItem.markedBy = {
+        userId,
+        name: user.fullName,
+        profileImage: user.profileImage || "/assets/default-user.png",
+        timestamp: new Date(),
+      };
+    } else if (status === "Unmark") {
+      // ✅ Remove markedBy details when unmarked
+      wishlistItem.status = "Unmark";
+      wishlistItem.markedBy = null;
+    } else if (status === "Completed") {
+      wishlistItem.status = "Completed";
+    }
+
+    await wishlistItem.save();
+    return res.status(200).json({ success: true, message: "Status updated successfully", data: wishlistItem });
+
+  } catch (error) {
+    console.error("Error updating wishlist status:", error);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
   
 module.exports = {
     createWishlistItem, 
@@ -194,5 +322,6 @@ module.exports = {
     getWishlistItemById,
     updateWishlistItem,
     deleteWishlistItem,
+    updateWishlistStatus,
     wishlistUpload
 }

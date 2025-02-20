@@ -8,9 +8,9 @@ const eventSchema = new mongoose.Schema(
     date: { type: Date, required: true },
     location: { type: String, required: false },  // ✅ Location field
     aboutEvent: { type: String, required: false }, // ✅ Description field
-    relation: { type: String, required: true },
+    relation: { type: String, required: false },
     image: { type: String, required: false },
-    eventType: { type: String, enum: ["Birthday", "Anniversary", "Other"], required: true },
+    eventType: { type: String, enum: ["Birthday", "Anniversary", "Other"], required: false },
   },
   { timestamps: true }
 );

@@ -7,9 +7,11 @@ const { upload, profileUpload } = require("../middleware/multer");
 const { getFamilyInfo, saveFamilyInfo, familyUpload, updateFamilyMember,   } = require("../controller/familyInfoController");
 const { getEvents, getEventById, createEvent, updateEvent, deleteEvent, getPastEvents } = require("../controller/eventsController");
 const { sendLoginOTP, sendSignupOTP, verifySignupOTP, loginWithPhone } = require("../controller/authController");
-const { createWishlistItem, getWishlistByEvent, getWishlistItemById, updateWishlistItem, deleteWishlistItem, wishlistUpload } = require("../controller/wishListController");
-const { inviteGuests, getEventGuests, updateGuestStatus}= require("../controller/guestController");
+const { createWishlistItem, getWishlistByEvent, getWishlistItemById, updateWishlistItem, deleteWishlistItem, wishlistUpload, updateWishlistStatus } = require("../controller/wishListController");
 const { getInvitations, updateInvitationStatus } = require("../controller/invitationController");
+const { inviteGuests, getEventGuests, updateGuestStatus } = require("../controller/guestController");
+const { createPool, contributeToPool, getPoolDetails, getContributors, inviteUsersToPool } = require("../controller/poolController");
+const { createNotification, getUserNotifications, markAsRead } = require("../controller/notificationController");
 
 const router = express.Router();
 
@@ -49,7 +51,7 @@ router.get("/wishlist/event/:eventId", verifyToken, getWishlistByEvent);
 router.get("/wishlist/item/:itemId", verifyToken, getWishlistItemById);
 router.put("/wishlist/:itemId", verifyToken, wishlistUpload.single("image"), updateWishlistItem);
 router.delete("/wishlist/:itemId", verifyToken, deleteWishlistItem);
-
+router.put("/update-status/:itemId", verifyToken, updateWishlistStatus);
 
 //guests
 router.post("/guests/invite", verifyToken, inviteGuests); // Send invitations
@@ -58,6 +60,20 @@ router.put("/guests/respond/:guestId", verifyToken, updateGuestStatus);
 // ✅ Route to fetch user invitations
 router.get("/invitations", verifyToken, getInvitations);
 
+
 // ✅ Route to update invitation status (Accept/Decline)
 router.put("/invitations/:invitationId", verifyToken, updateInvitationStatus);
+
+
+//Pooling
+router.post("/create", verifyToken, createPool);
+router.post("/pool/contribute", verifyToken, contributeToPool);
+router.get("/pool/:wishId", verifyToken, getPoolDetails);
+router.get("/contributors/:wishId", verifyToken, getContributors);
+router.post("/pool/invite", verifyToken, inviteUsersToPool);
+
+//Notification
+router.post("/create", verifyToken, createNotification);
+router.get("/notifications", verifyToken, getUserNotifications);
+router.put("/read/:notificationId", verifyToken, markAsRead);
 module.exports = router;

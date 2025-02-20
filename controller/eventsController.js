@@ -114,7 +114,18 @@ const getEvents = async (req, res) => {
 
     const events = await Event.find({ userId });
 
-    res.status(200).json({ success: true, data: events }); // ✅ Send stored relative paths as-is
+    const updatedEvents = events.map((event) => {
+      const today = moment().startOf("day");
+      const eventDate = moment(event.date).startOf("day");
+      const daysLeft = eventDate.diff(today, "days");
+
+      return {
+        ...event.toObject(),
+        daysLeft: daysLeft > 0 ? daysLeft : 0, // If event is in the past, show 0
+      };
+    });
+
+    res.status(200).json({ success: true, data: updatedEvents });
   } catch (error) {
     console.error("Error fetching events:", error);
     res.status(500).json({ success: false, message: "Failed to fetch events." });
